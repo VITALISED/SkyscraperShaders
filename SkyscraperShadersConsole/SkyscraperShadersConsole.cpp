@@ -2,7 +2,7 @@
 //
 
 #include <iostream>
-#include <fstream>
+#include "Filesystem.h"
 #include "Shaders.h"
 #include <assert.h>
 
@@ -12,17 +12,26 @@ void AddIncludeFile()
 
 }
 
-shaderc_include_result* ResolveInclude(void* __formal, const char* requested_source, int type, const char* requesting_source, size_t include_depth)
+shaderc_include_result* ResolveInclude(void* user_data, const char* requested_source, int type, const char* requesting_source, size_t include_depth)
 {
-    char* Destination = (char*)"./shader_code";
-    strcat(Destination, requested_source);
+    char Destination[128] = "./code/";
+    strcat_s(Destination, sizeof(Destination), requested_source);
 
-    //TODO: actually get and return shader sources
+    std::string FileName = GetSourceFileName(Destination);
+    std::string FileContents = GetSourceFileText(Destination);
+
+    shaderc_include_result* result = (shaderc_include_result*)malloc(sizeof(shaderc_include_result));
+    result->content = FileContents.c_str();
+    result->content_length = FileContents.length();
+    result->source_name = FileName.c_str();
+    result->source_name_length = FileName.length();
+
+    return result;
 }
 
-void ReleaseInclude(void* __formal, shaderc_include_result* pInclude)
+void ReleaseInclude(void* user_data, shaderc_include_result* pInclude)
 {
-    //TODO: see above
+    free(pInclude);
 }
 
 shaderc_shader_kind DetermineShaderType(const char* lpacString)
@@ -59,7 +68,7 @@ shaderc_shader_kind DetermineShaderType(const char* lpacString)
 
 int main()
 {
-    const char* filePath = "TODO";
+    const char* filePath = "./code/lightfragment.shader.h";
 
     shaderc_compiler_t lshaderc_compiler = shaderc_compiler_initialize();
     shaderc_compile_options_t lshaderc_compile_options = shaderc_compile_options_initialize();
@@ -70,14 +79,23 @@ int main()
     shaderc_compile_options_set_optimization_level(lshaderc_compile_options, shaderc_optimization_level_performance);
     shaderc_compile_options_set_target_env(lshaderc_compile_options, shaderc_target_env_vulkan, 0x400000);
 
-    shaderc_shader_kind lshader_kind = DetermineShaderType(filePath);
+    shaderc_shader_kind lshader_kind = /*DetermineShaderType(filePath);*/ shaderc_fragment_shader;
 
-    shaderc_compilation_result_t result = shaderc_compile_into_spv(lshaderc_compiler, "BAD!!!", sizeof(NULL), lshader_kind, "wire", "main", lshaderc_compile_options);
-    
+    std::string FileContent = GetSourceFileText(filePath);
+    std::string FileName = GetSourceFileName(filePath);
+
+    shaderc_compilation_result_t result = shaderc_compile_into_spv(lshaderc_compiler, FileContent.c_str(), sizeof(NULL), lshader_kind, FileName.c_str(), "main", lshaderc_compile_options);
+
     if (shaderc_result_get_num_errors(result))
     {
         assert("shader comp foiled :/");
     }
+
+    std::ofstream Output("./output.spv");
+
+    Output << result;
+
+    Output.close();
 
     const char* bytes = shaderc_result_get_bytes(result);
 
