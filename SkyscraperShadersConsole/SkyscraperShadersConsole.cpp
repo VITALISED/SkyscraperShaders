@@ -5,6 +5,7 @@
 #include "Filesystem.h"
 #include "Shaders.h"
 #include <assert.h>
+#include <vector>
 
 // not sure what the point of this is, maybe it's the .h files provided with the shaders?
 void AddIncludeFile()
@@ -68,7 +69,7 @@ shaderc_shader_kind DetermineShaderType(const char* lpacString)
 
 int main()
 {
-    const char* filePath = "./code/lightfragment.shader.h";
+    const char* filePath = "./code/SSR.SHADER.BIN";
 
     shaderc_compiler_t lshaderc_compiler = shaderc_compiler_initialize();
     shaderc_compile_options_t lshaderc_compile_options = shaderc_compile_options_initialize();
@@ -79,25 +80,34 @@ int main()
     shaderc_compile_options_set_optimization_level(lshaderc_compile_options, shaderc_optimization_level_performance);
     shaderc_compile_options_set_target_env(lshaderc_compile_options, shaderc_target_env_vulkan, 0x400000);
 
-    shaderc_shader_kind lshader_kind = /*DetermineShaderType(filePath);*/ shaderc_fragment_shader;
+    shaderc_shader_kind lshader_kind = /*DetermineShaderType(filePath);*/ shaderc_glsl_infer_from_source;
 
     std::string FileContent = GetSourceFileText(filePath);
     std::string FileName = GetSourceFileName(filePath);
 
-    shaderc_compilation_result_t result = shaderc_compile_into_spv(lshaderc_compiler, FileContent.c_str(), sizeof(NULL), lshader_kind, FileName.c_str(), "main", lshaderc_compile_options);
+    //shaderc_compile_options_add_macro_definition(lshaderc_compile_options, "D_PLATFORM_PC", strlen("D_PLATFORM_PC"), "1", strlen("1"));
 
+    shaderc_compilation_result_t result = shaderc_compile_into_spv(lshaderc_compiler, FileContent.c_str(), FileContent.length(), lshader_kind, FileName.c_str(), "main", lshaderc_compile_options);
+
+ 
     if (shaderc_result_get_num_errors(result))
     {
         assert("shader comp foiled :/");
+        std::printf("\n\nOIL\n\n");
+        std::printf(shaderc_result_get_error_message(result));
     }
 
     std::ofstream Output("./output.spv");
 
-    Output << result;
+    uint32_t* bytes = (uint32_t*)shaderc_result_get_bytes(result);
+
+    std::cout << *bytes;
+    std::cout << bytes;
+
+    Output << bytes;
 
     Output.close();
 
-    const char* bytes = shaderc_result_get_bytes(result);
 
     //figure out stuff
     //shaderc_compile_into_spv() 

@@ -12,12 +12,16 @@ std::string GetSourceFileText(const char* path)
 {
 	std::ifstream Input(path);
 
+	std::string buff = std::string();
 	std::string result = std::string();
 
-	while (std::getline(Input, result))
+	while (std::getline(Input, buff))
 	{
-		std::printf(result.c_str());
+		//std::printf(result.c_str());
+		result.append(buff).append("\n");
 	}
+
+	//std::printf(result.c_str());
 
 	Input.close();
 
