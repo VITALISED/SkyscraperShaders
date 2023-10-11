@@ -69,7 +69,7 @@ shaderc_shader_kind DetermineShaderType(const char* lpacString)
 
 int main()
 {
-    const char* filePath = "./code/SSR.SHADER.BIN";
+    const char* filePath = "./code/basic.shader.h";
 
     shaderc_compiler_t lshaderc_compiler = shaderc_compiler_initialize();
     shaderc_compile_options_t lshaderc_compile_options = shaderc_compile_options_initialize();
@@ -80,12 +80,15 @@ int main()
     shaderc_compile_options_set_optimization_level(lshaderc_compile_options, shaderc_optimization_level_performance);
     shaderc_compile_options_set_target_env(lshaderc_compile_options, shaderc_target_env_vulkan, 0x400000);
 
-    shaderc_shader_kind lshader_kind = /*DetermineShaderType(filePath);*/ shaderc_glsl_infer_from_source;
+    shaderc_shader_kind lshader_kind = /*DetermineShaderType(filePath);*/ shaderc_vertex_shader;
 
     std::string FileContent = GetSourceFileText(filePath);
     std::string FileName = GetSourceFileName(filePath);
 
     //shaderc_compile_options_add_macro_definition(lshaderc_compile_options, "D_PLATFORM_PC", strlen("D_PLATFORM_PC"), "1", strlen("1"));
+    //shaderc_compile_options_add_macro_definition(lshaderc_compile_options, "D_PLATFORM_VULKAN", strlen("D_PLATFORM_VULKAN"), "1", strlen("1"));
+    //shaderc_compile_options_add_macro_definition(lshaderc_compile_options, "D_PLATFORM_GLSL", strlen("D_PLATFORM_GLSL"), "1", strlen("1"));
+    shaderc_compile_options_add_macro_definition(lshaderc_compile_options, "D_VERTEX", strlen("D_VERTEX"), "1", strlen("1"));
 
     shaderc_compilation_result_t result = shaderc_compile_into_spv(lshaderc_compiler, FileContent.c_str(), FileContent.length(), lshader_kind, FileName.c_str(), "main", lshaderc_compile_options);
 
